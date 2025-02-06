@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GrandCo Hosted Payment Page</title>
+  <link rel="icon" href="./assets/img/favicon.ico" />
+  <link rel="stylesheet" href="./assets/css/style.css">
+  <script src="./assets/script/tailwind.css.js"></script>
+  <!-- <script src="./assets/script/jquery.min.js"></script> -->
+  <script src="./assets/script/tailwind.config.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/datepicker.min.js"></script>
+
+  <script src="https://api.demo.convergepay.com/hosted-payments/Checkout.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <script src="./assets/script/constants.js"></script>
+  <script>
+
+    function showResult(status, paymentData) {
+      const internalTransactionId = document.getElementById('internalTransactionId').value
+      const tokenRequest = paymentData;
+      $.post(PAYMENT_URL+PAYMENT_UPDATE_ROUTE+'/'+internalTransactionId, tokenRequest, function (data) {
+        console.log(data);
+      });
+      const paymentResponseUrl = "payment-response.html?status=" + status + "&msg=" + JSON.stringify(paymentData);
+      window.location.href = paymentResponseUrl;
+    }
+
+    function initiateCheckoutJS() {
+      const amount = document.getElementById('ssl_amount').value;
+      const firstName = document.getElementById('ssl_first_name').value;
+      const lastName = document.getElementById('ssl_last_name').value;
+      var address1 = document.getElementById('address1').value;
+      var address2 = document.getElementById('address2').value;
+      var city = document.getElementById('city').value;
+      var state = document.getElementById('state').value;
+      var zip = document.getElementById('zip').value;
+
+      if (!amount || !firstName || !lastName) {
+        alert("Please fill all required fields!");
+        return false;
+      }
+      const tokenRequest = {
+        ssl_amount: amount,
+        ssl_first_name: firstName,
+        ssl_last_name: lastName,
+        ssl_avs_address: address1,
+        ssl_address2: address2,
+        ssl_city: city,
+        ssl_state: state,
+        ssl_avs_zip: zip,
+        company_code: COMPANY_CODE,
+      };
+      $.post(PAYMENT_URL+PAYMENT_ROUTE, tokenRequest, function (data) {
+        console.log(data);
+        document.getElementById('token').value = data.data;
+        document.getElementById('internalTransactionId').value = data.internalTransactionId;
+        document.getElementById('billingSection').style.display = "none";
+        var formattedAmount = parseFloat(amount).toLocaleString('en-US', {
+          style: 'currency',
+          currency: 'USD',
+        });
+        document.getElementById('show_original_amount').innerHTML = formattedAmount;
+        document.getElementById('show_total_amount').innerHTML = formattedAmount;
+        document.getElementById('paymentSection').style.display = "block";
+      });
+      return false;
+    }
+
+    function pay() {
+      var internalTransactionId = document.getElementById('internalTransactionId').value;
+      var token = document.getElementById('token').value;
+      var card = document.getElementById('card').value;
+      card = card.replace(/-/g, '');
+      if(!validateCardNumber(card)){
+        return false;
+      }
+      var exp = document.getElementById('exp').value;
+      var cvv = document.getElementById('cvv').value;
+      var gettoken = "y";
+      var addtoken = "y";
+      var invoice = 'INV_'+internalTransactionId;
+      var firstname = document.getElementById('ssl_first_name').value;
+      var lastname = document.getElementById('ssl_last_name').value;
+      var address1 = document.getElementById('address1').value;
+      var address2 = document.getElementById('address2').value;
+      var city = document.getElementById('city').value;
+      var state = document.getElementById('state').value;
+      var zip = document.getElementById('zip').value;
+      var paymentData = {
+        ssl_txn_auth_token: token,
+        ssl_card_number: card,
+        ssl_exp_date: exp,
+        ssl_get_token: gettoken,
+        ssl_add_token: addtoken,
+        ssl_invoice_number: invoice,
+        ssl_first_name: firstname,
+        ssl_last_name: lastname,
+        ssl_cvv2cvc2: cvv,
+        ssl_avs_address: address1,
+        ssl_address2: address2,
+        ssl_city: city,
+        ssl_state: state,
+        ssl_avs_zip: zip,
+        internalTransactionId: internalTransactionId
+      };
+      var callback = {
+        onError: function (error) {
+          showResult("error", error);
+        },
+        onDeclined: function (response) {
+          console.log("Result Message=" + response['ssl_result_message']);
+          showResult("declined", response);
+        },
+        onApproval: function (response) {
+          console.log("Approval Code=" + response['ssl_approval_code']);
+          showResult("approval", response);
+        }
+      };
+      ConvergeEmbeddedPayment.pay(paymentData, callback);
+      return false;
+    }
+  </script>
+</head>
+<body class="bg-cover bg-center bg-[url('./assets/svg/map.svg')]">
+  <section class="flex flex-col justify-center antialiased text-gray-600 min-h-screen">
+    <div class="mx-auto max-w-screen-xl px-4 2xl:px-0">
+      <div class="mx-auto max-w-5xl">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white sm:text-2xl text-center">GrandCo Payments Page
+        </h2>
+        <div id="billingSection" class="mt-6 sm:mt-4 lg:flex lg:items-start lg:gap-4">
+          <form id="billingForm" onsubmit="return initiateCheckoutJS();"
+            class="w-full rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 sm:p-6 lg:max-w-xl lg:p-8">
+            <div class="mb-6 grid grid-cols-1 gap-4">
+              <div class="col-span-2 sm:col-span-1">
+                <label for="ssl_amount" class="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
+                  Transaction Amount * </label>
+                <div class="flex">
+                  <span
+                    class="inline-flex items-center px-3 text-sm text-gray-900 bg-gray-200 border rounded-e-0 border-gray-300 border-e-0 rounded-s-md dark:bg-gray-600 dark:text-gray-400 dark:border-gray-600">
+                    <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" xmlns="http://www.w3.org/2000/svg" width="24"
+                      height="24" viewBox="0 0 24 24">
+                      <g fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="12" cy="12" r="10" />
+                        <path stroke-linecap="round"
+                          d="M12 6v12m3-8.5C15 8.12 13.657 7 12 7S9 8.12 9 9.5s1.343 2.5 3 2.5s3 1.12 3 2.5s-1.343 2.5-3 2.5s-3-1.12-3-2.5" />
+                      </g>
+                    </svg>
+                  </span>
+                  <input type="text" id="ssl_amount"
+                    class="rounded-none rounded-e-lg bg-gray-50 border text-gray-900 focus:ring-blue-500 focus:border-blue-500 block flex-1 min-w-0 w-full text-sm border-gray-300 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                    placeholder="Enter Amount" required value="100">
+                </div>
+              </div>
+            </div>
+            <div class="mb-6 grid grid-cols-2 gap-4">
+              <div class="col-span-2 sm:col-span-1">
+                <label for="ssl_first_name" class="mb-2 block text-sm font-medium text-gray-900 dark:text-white"> First
+                  Name * </label>
+                <input type="text" id="ssl_first_name"
+                  class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500"
+                  placeholder="First Name" required />
+              </div>
+              <div class="col-span-2 sm:col-span-1">
+                <label for="ssl_last_name" class="mb-2 block text-sm font-medium text-gray-900 dark:text-white"> Last
+                  Name * </label>
+                <input type="text" id="ssl_last_name"
+                  class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500"
+                  placeholder="Last Name" required />
+              </div>
+            </div>
+            <div class="mb-6 grid grid-cols-2 gap-4">
+              <div class="col-span-2 sm:col-span-1">
+                <label for="address1" class="mb-2 block text-sm font-medium text-gray-900 dark:text-white"> Address 1
+                </label>
+                <input type="text" id="address1"
+                  class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500"
+                  placeholder="Address Line 1" />
+              </div>
+              <div class="col-span-2 sm:col-span-1">
+                <label for="address2" class="mb-2 block text-sm font-medium text-gray-900 dark:text-white">Address 2
+                </label>
+                <input type="text" id="address2"
+                  class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500"
+                  placeholder="Address Line 2" />
+              </div>
+            </div>
+            <div class="mb-6 grid grid-cols-3 gap-4">
+              <div class="col-span-2 sm:col-span-1">
+                <label for="city" class="mb-2 block text-sm font-medium text-gray-900 dark:text-white"> City </label>
+                <input type="text" id="city"
+                  class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500"
+                  placeholder="City" />
+              </div>
+              <div class="col-span-2 sm:col-span-1">
+                <label for="state" class="mb-2 block text-sm font-medium text-gray-900 dark:text-white">State</label>
+                <input type="text" id="state"
+                  class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500"
+                  placeholder="State" />
+              </div>
+              <div class="col-span-2 sm:col-span-1">
+                <label for="zip" class="mb-2 block text-sm font-medium text-gray-900 dark:text-white">Zip</label>
+                <input type="text" id="zip"
+                  class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500"
+                  placeholder="Zip" />
+              </div>
+            </div>
+            <button type="submit"
+              class="flex w-full items-center justify-center rounded-lg bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-800 focus:outline-none focus:ring-4  focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">Pay
+              now</button>
+          </form>
+        </div>
+        <input id="token" type="hidden" name="token">
+        <input id="internalTransactionId" type="hidden" name="internalTransactionId">
+        
+        <div style="display: none;" id="paymentSection" class="mt-6 sm:mt-8 lg:flex lg:items-start lg:gap-12">
+          <form onsubmit="return pay();"
+            class="w-full rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 sm:p-6 lg:max-w-xl lg:p-8">
+            <div class="mb-6 grid grid-cols-1 gap-4">
+              <div class="col-span-2 sm:col-span-1">
+                <label for="card-number-input" class="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
+                  Card number* </label>
+                <input type="text" id="card"
+                  class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 pe-10 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500  dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500"
+                  placeholder="xxxx-xxxx-xxxx-xxxx" required />
+                  <p id="card-error" class="mt-2 text-sm text-red-600 dark:text-red-500 hidden">Please enter a valid Visa card number.</p>
+              </div>
+            </div>
+
+            <div class="mb-6 grid grid-cols-2 gap-4">
+              <div>
+                <label for="exp" class="mb-2 block text-sm font-medium text-gray-900 dark:text-white">Card expiration*
+                </label>
+                <div class="relative">
+                  <div class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3.5">
+                    <svg class="h-4 w-4 text-gray-500 dark:text-gray-400" aria-hidden="true"
+                      xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                      <path fill-rule="evenodd"
+                        d="M5 5a1 1 0 0 0 1-1 1 1 0 1 1 2 0 1 1 0 0 0 1 1h1a1 1 0 0 0 1-1 1 1 0 1 1 2 0 1 1 0 0 0 1 1h1a1 1 0 0 0 1-1 1 1 0 1 1 2 0 1 1 0 0 0 1 1 2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a2 2 0 0 1 2-2ZM3 19v-7a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Zm6.01-6a1 1 0 1 0-2 0 1 1 0 0 0 2 0Zm2 0a1 1 0 1 1 2 0 1 1 0 0 1-2 0Zm6 0a1 1 0 1 0-2 0 1 1 0 0 0 2 0Zm-10 4a1 1 0 1 1 2 0 1 1 0 0 1-2 0Zm6 0a1 1 0 1 0-2 0 1 1 0 0 0 2 0Zm2 0a1 1 0 1 1 2 0 1 1 0 0 1-2 0Z"
+                        clip-rule="evenodd" />
+                    </svg>
+                  </div>
+                  <input datepicker datepicker-format="mm/yy" id="exp" type="text"
+                    class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 ps-9 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-blue-500 dark:focus:ring-blue-500"
+                    placeholder="12/23" required />
+                </div>
+              </div>
+              <div>
+                <label for="cvv-input" class="mb-2 flex items-center gap-1 text-sm font-medium text-gray-900 dark:text-white">
+                  CVV*
+                  <button id="cvv-tooltip-button" class="text-gray-400 hover:text-gray-900 dark:text-gray-500 dark:hover:text-white">
+                    <svg class="h-4 w-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+                      <path fill-rule="evenodd"
+                        d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm9.408-5.5a1 1 0 1 0 0 2h.01a1 1 0 1 0 0-2h-.01ZM10 10a1 1 0 1 0 0 2h1v3h-1a1 1 0 1 0 0 2h4a1 1 0 1 0 0-2h-1v-4a1 1 0 0 0-1-1h-2Z"
+                        clip-rule="evenodd" />
+                    </svg>
+                  </button>
+                  <div id="cvv-tooltip" role="tooltip"
+                    class="tooltip invisible absolute z-10 inline-block rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white opacity-0 shadow-sm transition-opacity duration-300 dark:bg-gray-700 mt-[10%]">
+                    The last 3 digits on back of card
+                    <div class="tooltip-arrow" data-popper-arrow></div>
+                  </div>
+                </label>
+                <input type="number" id="cvv-input" aria-describedby="helper-text-explanation"
+                  class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500"
+                  placeholder="•••" required />
+              </div>
+            </div>
+
+            <button type="submit"
+              class="flex w-full items-center justify-center rounded-lg bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-800 focus:outline-none focus:ring-4  focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">Pay
+              now</button>
+          </form>
+
+          <div class="mt-6 grow sm:mt-8 ">
+            <div
+              class="space-y-4 rounded-lg border border-gray-100 bg-gray-50 p-6 dark:border-gray-700 dark:bg-gray-800">
+              <div class="space-y-2">
+                <dl class="flex items-center justify-between gap-4">
+                  <dt class="text-base font-normal text-gray-500 dark:text-gray-400">Original price</dt>
+                  <dd class="text-base font-medium text-gray-900 dark:text-white" id="show_original_amount">$0.00</dd>
+                </dl>
+                <dl class="flex items-center justify-between gap-4">
+                  <dt class="text-base font-normal text-gray-500 dark:text-gray-400">Tax</dt>
+                  <dd class="text-base font-medium text-gray-900 dark:text-white">$0</dd>
+                </dl>
+              </div>
+              <dl class="flex items-center justify-between gap-4 border-t border-gray-200 pt-2 dark:border-gray-700">
+                <dt class="text-base font-bold text-gray-900 dark:text-white">Total</dt>
+                <dd class="text-base font-bold text-gray-900 dark:text-white" id="show_total_amount">$0.00</dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+        <div type="submit" class="flex w-full items-center justify-center">
+          <p class="mt-6 text-center text-gray-500 dark:text-gray-400 sm:mt-8 lg:text-left">
+            Payment processed by <a href="https://grandcopayments.com/" target="_blank" title=""
+              class="font-medium text-primary-700 underline hover:no-underline dark:text-primary-500">GrandCo
+              Payments</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+</body>
+<script src="./assets/script/site.js"></script>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment response</title>
+  <link rel="icon" href="./assets/img/favicon.ico" />
+  <link rel="stylesheet" href="./assets/css/style.css">
+  <script src="./assets/script/tailwind.css.js"></script>
+  <script src="./assets/script/jquery.min.js"></script>
+  <script src="./assets/script/tailwind.config.js"></script>
+</head>
+<body class="bg-cover bg-center bg-[url('./assets/svg/map.svg')]">
+    <section class="flex flex-col justify-center antialiased text-gray-600 min-h-screen p-4">
+        <div class="h-full">
+            <div class="max-w-[480px] mx-auto">
+                <div class="container mx-auto">
+                    <div class="flex justify-center">
+                        <div class="w-full">
+                            <!-- Success Message Block -->
+                            <div class="shadow-md py-12 text-center mb-10 border-b-4 panel border-green-500 success-section" style="display:none;">
+                                <div class="flex justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-1/4" viewBox="0 0 20 20">
+                                        <path fill="green" d="M10 20a10 10 0 0 1 0-20a10 10 0 1 1 0 20m-2-5l9-8.5L15.5 5L8 12L4.5 8.5L3 10z"/>
+                                    </svg>
+                                </div>
+                                <h2 class="mt-4 mb-3 text-4xl font-medium">Your payment was successful</h2>
+                                <p class="text-lg text-gray-600 font-medium">
+                                    Thank you for your payment. We will <br>
+                                    be in contact with more details shortly
+                                </p>
+                            </div>
+                            
+                            <!-- Failure Message Block -->
+                            <div class="shadow-md py-12 text-center mb-10 border-b-4 panel border-red-500 failure-section" style="display:none;">
+                                <div class="flex justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-1/4" viewBox="0 0 32 32">
+                                        <path fill="red" d="M16 2a14 14 0 1 0 14 14A14 14 0 0 0 16 2m0 26a12 12 0 1 1 12-12a12 12 0 0 1-12 12"/>
+                                        <path fill="red" d="M15 8h2v11h-2zm1 14a1.5 1.5 0 1 0 1.5 1.5A1.5 1.5 0 0 0 16 22"/>
+                                    </svg>
+                                </div>
+                                <h2 class="mt-4 mb-3 text-4xl font-medium">Your payment <span id="payment-status">Loading...</span></h2>
+                                <p class="text-lg text-gray-600 font-medium">Try again later</p>
+                            </div>
+
+
+                        </div>
+                    </div>
+
+                    <div class="mx-auto max-w-5xl">
+                        <div class=" py-12 text-center mb-10 border-b-4 panel failure-section">
+                            <div class="flex justify-center" id="msg"></div>
+                        </div>
+                    </div>
+
+
+                    <div class="flex justify-center">
+                        <a href="index.html" class="text-center text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">Go To Home</a>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        $(document).ready(function() {
+            // Get the URL parameter 'status'
+            const urlParams = new URLSearchParams(window.location.search);
+            const status = urlParams.get('status'); // 'success' or 'failed'
+            const msg = urlParams.get('msg'); // 'success' or 'failed'
+
+            // Show the corresponding section based on status
+            if (status === 'approval') {
+                $('.success-section').show();  // Show success message
+                $('#payment-status').text('Payment was successful');
+            } else if (status === 'failed') {
+                $('.failure-section').show();  // Show failure message
+                $('#payment-status').text('Payment failed');
+            } else {
+                $('.failure-section').show();  // Show failure message
+                $('#payment-status').text(`Payment ${status}`);
+                // Optionally handle cases where status is not set or is unknown
+                // alert("Unknown status.");
+            }
+            $('#msg').text(`${msg}`);
+
+            
+        });
+    </script>
+</body>
+</html>
